@@ -119,18 +119,43 @@ def download_file(url, filename, status_key):
     except Exception as e:
         download_status[status_key] = f'error: {e}'
 
+DOWNLOADED_FILE = 'downloaded.json'
+
+def load_downloaded():
+    if not os.path.exists(DOWNLOADED_FILE):
+        return set()
+    with open(DOWNLOADED_FILE, 'r', encoding='utf-8') as f:
+        try:
+            return set(json.load(f))
+        except Exception:
+            return set()
+
+def save_downloaded(downloaded):
+    with open(DOWNLOADED_FILE, 'w', encoding='utf-8') as f:
+        json.dump(list(downloaded), f, ensure_ascii=False, indent=2)
+
 @app.route('/api/download', methods=['POST'])
 def api_download():
     data = request.json
     m3u_path = data['m3u_path']
+    download_dir = data.get('download_dir', 'downloads')
     users = load_users()
     entries = parse_m3u_links(m3u_path)
     used_auths = set()
     threads = []
     keys = []
+    os.makedirs(download_dir, exist_ok=True)
+    downloaded = load_downloaded()
     for idx, entry in enumerate(entries):
         title = extract_title(entry['info'])
         url = entry['url']
+        filename = f'{title}.mp4'
+        # Evitar download repetido
+        if filename in downloaded or url in downloaded:
+            status_key = f'{idx}_{filename}'
+            download_status[status_key] = 'skipped'
+            keys.append({'key': status_key, 'title': title, 'skipped': True})
+            continue
         orig_user, orig_pass = extract_auth_from_url(url)
         auth_idx = 0
         while auth_idx < len(users):
@@ -144,14 +169,37 @@ def api_download():
         new_user, new_pass = users[auth_idx]['user'], users[auth_idx]['password']
         if (orig_user, orig_pass) != (new_user, new_pass):
             url = replace_auth_in_url(url, new_user, new_pass)
-        filename = f'{title}.mp4'
         status_key = f'{idx}_{filename}'
         download_status[status_key] = 'downloading'
-        t = threading.Thread(target=download_file, args=(url, filename, status_key))
+        t = threading.Thread(target=download_file, args=(url, filename, status_key, download_dir, downloaded))
         threads.append(t)
         keys.append({'key': status_key, 'title': title})
         t.start()
     return jsonify({'status': 'started', 'keys': keys})
+
+# Atualizar download_file para aceitar o diretório e memória
+
+def download_file(url, filename, status_key, download_dir='downloads', downloaded=None):
+    path = os.path.join(download_dir, filename)
+    if downloaded is None:
+        downloaded = set()
+    if filename in downloaded or url in downloaded:
+        download_status[status_key] = 'skipped'
+        return
+    try:
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+        download_status[status_key] = 'done'
+        downloaded.add(filename)
+        downloaded.add(url)
+        save_downloaded(downloaded)
+    except Exception as e:
+        download_status[status_key] = f'error: {e}'
+
 
 @app.route('/api/status', methods=['POST'])
 def api_status():

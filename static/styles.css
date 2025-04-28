@@ -1,4 +1,17 @@
-body { background: #f8f9fa; }
-#progress-section .progress { height: 2rem; margin-bottom: 1rem; }
+body { background: #181a1b !important; color: #e0e0e0; }
+.card { border-radius: 1.2rem !important; }
+input, textarea, .form-control { background: #23272b !important; color: #e0e0e0 !important; border-color: #343a40 !important; }
+input:focus, textarea:focus { box-shadow: 0 0 0 2px #0dcaf0 !important; }
+.list-group-item { background: #23272b !important; color: #e0e0e0 !important; border-color: #343a40 !important; transition: background 0.2s; }
+.list-group-item:hover { background: #0dcaf0 !important; color: #181a1b !important; }
+#progress-section .progress { height: 2rem; margin-bottom: 1rem; background: #23272b; border-radius: 1rem; }
 #filmes-list ul { list-style: none; padding-left: 0; }
 #filmes-list li { margin-bottom: 5px; }
+#download-btn, #add-user-form button, #paste-form button, #upload-form button {
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 16px #00000022;
+    border-radius: 2rem;
+}
+.input-group-text { background: #23272b !important; color: #e0e0e0 !important; border-color: #343a40 !important; }
+footer { opacity: 0.7; }

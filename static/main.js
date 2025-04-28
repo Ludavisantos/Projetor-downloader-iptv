@@ -84,11 +84,12 @@ $(function() {
     let keys = [];
     $('#download-btn').click(function() {
         $('#progress-section').html('Iniciando downloads...');
+        let downloadDir = $('#download-dir').val() || 'downloads';
         $.ajax({
             url: '/api/download',
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ m3u_path: m3uPath }),
+            data: JSON.stringify({ m3u_path: m3uPath, download_dir: downloadDir }),
             success: function(res) {
                 keys = res.keys;
                 showProgress();
@@ -100,9 +101,10 @@ $(function() {
     function showProgress(statuses) {
         let html = '';
         (keys || []).forEach(k => {
-            let st = statuses ? statuses[k.key] : 'downloading';
+            let st = statuses ? statuses[k.key] : (k.skipped ? 'skipped' : 'downloading');
             let bar = '';
             if (st === 'done') bar = '<div class="progress-bar bg-success" style="width:100%">Concluído</div>';
+            else if (st === 'skipped') bar = '<div class="progress-bar bg-warning" style="width:100%">Já baixado</div>';
             else if (st.startsWith('error')) bar = `<div class="progress-bar bg-danger" style="width:100%">Erro</div>`;
             else bar = '<div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%">Baixando...</div>';
             html += `<div><b>${k.title}</b><div class="progress">${bar}</div></div>`;
