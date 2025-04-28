@@ -1,0 +1,4 @@
+body { background: #f8f9fa; }
+#progress-section .progress { height: 2rem; margin-bottom: 1rem; }
+#filmes-list ul { list-style: none; padding-left: 0; }
+#filmes-list li { margin-bottom: 5px; }
